@@ -121,7 +121,19 @@ class HomeViewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: themeData.bodyBack,
+      
+      decoration: BoxDecoration(
+        color: themeData.bodyBack,
+        // gradient: LinearGradient(
+        //     begin: Alignment.topRight,
+        //     end: Alignment.bottomLeft,
+        //     stops: [0.2, 1.0],
+        //     colors: [
+        //       Color.fromARGB(255, 255, 102, 0),
+        //       Color.fromARGB(255, 153, 0, 51),
+        //     ],
+        //   )
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: <Widget>[
@@ -133,8 +145,8 @@ class HomeViewPage extends StatelessWidget {
             )
           ),
           EventView("Upcoming Events: ", ["Tomorrow: Bake Sale!", "yeee i hate everything"], screenDimensions.width, themeData),
-          BoxView(currentBlock.title, '${currentBlock.time.toString()} : ${currentBlock.course.course}', screenDimensions.width, themeData),
-          BoxView(nextBlock.title, '${nextBlock.time.toString()} : ${nextBlock.course.course}', screenDimensions.width, themeData),
+          currentBlock.inSchoolHours ? BoxView(currentBlock.title, '${currentBlock.time.toString()} : ${currentBlock.course.course}', screenDimensions.width, themeData) :  BoxView("Current Block: ", "Nothing!", screenDimensions.width, themeData),
+          nextBlock.inSchoolHours ? BoxView(nextBlock.title, '${nextBlock.time.toString()} : ${nextBlock.course.course}', screenDimensions.width, themeData) : BoxView("Next Block", "Nothing!", screenDimensions.width, themeData),
         ]
       )
     );

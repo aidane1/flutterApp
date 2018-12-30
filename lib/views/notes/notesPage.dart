@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:experiments/components/appBar.dart';
 import 'package:experiments/components/userStorage.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:experiments/components/httpRequests.dart';
 import 'package:experiments/components/universalClasses.dart';
+import 'package:experiments/components/notesRetrieval.dart';
+import 'package:experiments/components/assignmentRetrieval.dart';
 
 
 
@@ -23,37 +24,44 @@ List allAssignmentsToOne(List allAssignments, String courseID) {
 }
 
 Future<Column> makeAssignmentsColumn(String id, double screenWidth, ThemeColor configData) async {
-  List userData = await Requests.makeRequest("getAssignments?courseID=$id");
-  UserStorage storage = new UserStorage();
-  Map assignments = await storage.readUserData("assignmentData.json");
-  if (assignments[id] == null) {
-    Map assignmentsMap = {};
-    assignmentsMap[id] = [];
-    assignments = assignmentsMap; 
-  }
-  userData = []..addAll(userData)..addAll(assignments[id]);
+  await Assignments.retrieveFromServer(MongoId(id));
+  List<Assignment> allAssignmentsList = await Assignments.retrieveAssignments(MongoId(id));
   List<Widget> assignmentList = new List<Widget>();
-  for (var i = 0; i < userData.length; i++) {
-    userData[i]["completed"] = true;
-    Assignment currentAssignment = Assignment(userData[i]["assignment"], userData[i]["notes"], userData[i]["due"], MongoId(userData[i]["_id"]), false, DateTime.now());
+  for (var i = 0; i < allAssignmentsList.length; i++) {
     assignmentList.add(
-      MakeAssignment(screenWidth, currentAssignment, configData)
+      MakeAssignment(screenWidth, allAssignmentsList[i], configData, () async {
+        UserStorage storage = new UserStorage();
+        storage.writeIdData(allAssignmentsList, "retrievedAssignments$id.json");
+      })
     );
   }
-  if (userData.length == 0) {
+  if (allAssignmentsList.length == 0) {
     assignmentList.add(
-      MakeAssignment(screenWidth, Assignment("No assignments yet!", "", "", MongoId("_"), false, DateTime.now()), configData)
+      MakeAssignment(screenWidth, Assignment("No assignments yet!", "", "", MongoId("_"), false, DateTime.now()), configData, (){})
     );
-    // assignmentList.add(
-    //   // MakeAssignment(screenWidth, {"completed": false, "assignment": "No assignments yet!"}, configData)
-    // );
   }
   return Column(
     children: assignmentList,
   );
 }
 
-
+Future<Column> makeNotesColumn(String id, double screenWidth, ThemeColor configData) async {
+  await Notes.retrieveFromServer(MongoId(id));
+  List<Note> allNotesList = await Notes.retrieveNotes(MongoId(id));
+  allNotesList.sort((a,b) {
+    return b.dateSubmitted.millisecondsSinceEpoch.compareTo(a.dateSubmitted.millisecondsSinceEpoch);
+  });
+  List<Widget> notesList = new List<Widget>();
+  for (var i = 0; i < allNotesList.length; i++) {
+    notesList.add(MakeNote(screenWidth, allNotesList[i], configData, () async {
+      UserStorage storage = new UserStorage();
+      storage.writeIdData(allNotesList, "retrievedNotes$id.json");
+    }));
+  }
+  return Column(
+    children: notesList,
+  );
+}
 
 
 
@@ -275,12 +283,10 @@ class NotesPage extends StatelessWidget {
                  ],
                )
              ),
-
             Container(
               width: screenDimensions.width,
               margin: EdgeInsets.only(top: 20.0,),
               decoration: BoxDecoration(
-                
                 color: theme.blockBack,
               ),
               child: Column(
@@ -348,14 +354,18 @@ class NotesPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Column(
-                          children: <Widget>[
-                            // MakeAssignment(screenDimensions.width, {"completed": true, "assignment": "Of Mice and Men test on thursday, December 20th"}, theme),
-                            // MakeAssignment(screenDimensions.width, {"completed": true, "assignment": "Of Mice and Men Chapter 4 questions: 1 - 5"}, theme),
-                            // MakeAssignment(screenDimensions.width, {"completed": true, "assignment": "Of Mice and Men Chapter 3 questions: 1 - 10"}, theme),
-                            // MakeAssignment(screenDimensions.width, {"completed": true, "assignment": "Of Mice and Men Chapter 2 questions: 1 - 12"}, theme),
-                            // MakeAssignment(screenDimensions.width, {"completed": true, "assignment": "Of Mice and Men Chapter 1 questions: 1 - 7"}, theme),
-                          ],
+                        FutureBuilder(
+                          future: makeNotesColumn(course.id.id, screenDimensions.width, theme),
+                          builder: (BuildContext context, AsyncSnapshot snapshot) {
+                            if (snapshot.hasData) {
+                              return snapshot.data;
+                            } else if (snapshot.hasError) {
+                              print(snapshot.error);
+                              return Column();
+                            } else {
+                              return CircularProgressIndicator();
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -369,12 +379,73 @@ class NotesPage extends StatelessWidget {
     );
   }
 }
+class MakeNote extends StatefulWidget {
+  final double screenWidth;
+  Note note;
+  final ThemeColor theme;
+  final callBack;
+  MakeNote(this.screenWidth, this.note, this.theme, this.callBack);
+  _MakeNote createState() {
+    return _MakeNote();
+  }
+}
+class _MakeNote extends State<MakeNote> {
+  Widget build(BuildContext context) {
+    return Container(
+      width: widget.screenWidth,
+      height: 53.0,
+      padding: EdgeInsets.only(top: 16.0, bottom: 16.0),
+      child: Row(
+      children: <Widget>[
+        Checkbox(
+          onChanged: (val) async {
+            widget.note.completed = val;
+            setState(() {
+                            
+            });
+            await widget.callBack();
+          },
+          activeColor: Color(widget.theme.secondaryTheme[1]),
+          value: widget.note.completed == true,
+        ),
+        Expanded(
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: <Widget>[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    widget.note.note != null ? widget.note.note : "",
+                    style: TextStyle(
+                      decoration: widget.note.completed == true ? TextDecoration.lineThrough : TextDecoration.none,
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.w500,
+                      color: widget.note.completed == false ? widget.theme.mainTheme == 1 ? Colors.white : Colors.black : Colors.grey,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: <Widget>[
 
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          )
+        ),
+      ],
+    ),
+    );
+  }
+}
  class MakeAssignment extends StatefulWidget {
    final double screenWidth;
    Assignment assignment;
    final ThemeColor configData;
-   MakeAssignment(this.screenWidth, this.assignment, this.configData);
+   final callBack;
+   MakeAssignment(this.screenWidth, this.assignment, this.configData, this.callBack);
    _MakeAssignment createState() {
      return _MakeAssignment();
    }
@@ -388,11 +459,12 @@ class NotesPage extends StatelessWidget {
        child: Row(
         children: <Widget>[
           Checkbox(
-            onChanged: (val) {
+            onChanged: (val) async {
               widget.assignment.completed = val;
               setState(() {
                               
               });
+              await widget.callBack();
             },
             activeColor: Color(widget.configData.secondaryTheme[1]),
             value: widget.assignment.completed == true,

@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "344926800070",
+    "firebase_url": "https://schoolr-ce600.firebaseio.com",
+    "project_id": "schoolr-ce600",
+    "storage_bucket": "schoolr-ce600.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:344926800070:android:e8e05d79938d5ca9",
+        "android_client_info": {
+          "package_name": "com.example.experiments"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "344926800070-7opk5udfh1pofal9l901c3n3gqvt37bn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmSLu-Y3J1LcC4nRrdTSgF2aGjmlFZNXo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

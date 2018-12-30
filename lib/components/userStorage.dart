@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-
-
+import 'package:experiments/components/universalClasses.dart';
 
 class UserStorage {
   Future<String> get _localPath async {
@@ -35,6 +34,24 @@ class UserStorage {
       return userInfo.writeAsString(jsonEncode(decodedData));
     } catch (e) {
       return userInfo.writeAsString(jsonEncode(data));
+    }
+  }
+  Future<List> readIdData(String fileName) async {
+    try {
+      final userInfo = await _localFile(fileName);
+      String stringifiedData = await userInfo.readAsString();
+      List decodedData = json.decode(stringifiedData);
+      return decodedData;
+    } catch (e) {
+      return ([]);
+    }
+  }
+  Future<File> writeIdData(List ids, String fileName) async {
+    final userInfo = await _localFile(fileName);
+    try {
+      return userInfo.writeAsString(jsonEncode(ids));
+    } catch(e) {
+      return userInfo;
     }
   }
 }

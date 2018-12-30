@@ -22,6 +22,14 @@ class Requests {
       return [];
     }
   }
+  static Future<dynamic> postRequest(String path, Map body) async {
+    final response = await http.post('http://159.65.72.108:15651/$path', body: body);
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      return {};
+    }
+  }
 }
 
 

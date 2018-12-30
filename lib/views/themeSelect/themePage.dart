@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:experiments/components/userStorage.dart';
 import 'package:experiments/components/universalClasses.dart';
 
+import 'package:experiments/components/appBar.dart';
 
 
 List<List<dynamic>> colourThemes = [["Coquelicot", 0xffff3800, "Sure red is cool, but you're cooler"], ["Smaragdine", 0xff50c875, "Grass is fun"], ["Mikado", 0xffffc40c, "For when normal yellow is too intimidating"], ["Glaucous", 0xff6082b6, "Cloudy days"], ["Wenge", 0xff645452, "Not quite black"], ["Fulvous", 0xffe48400, "Socials binder from grade 5"], ["Amaranth", 0xffe52b50, "Very pretty, very nice"]];
@@ -251,6 +252,7 @@ class _ThemePicker extends State<ThemePicker> {
   Widget build(BuildContext context) {
     return Container(
       width: 120.0,
+      margin: EdgeInsets.only(top: 20.0),
       child: CupertinoSegmentedControl(
         onValueChanged: (value) {
           widget.lightOrDark = value;
@@ -296,22 +298,28 @@ class _ConfigurePage extends State<ConfigurePage> {
     ColoursPick colourPickPage = ColoursPick(screenDimensions.width, widget.configData.themeData.secondaryTheme[0], widget.configData.themeData);
     ThemePicker themePickPage = ThemePicker(widget.configData.themeData.mainTheme, widget.configData.themeData, this);
     return Scaffold(
+      appBar: makeAppBar(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            Text(
+              "Theme",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22.0,
+              )
+            ),
+          ],
+        ), 
+        screenDimensions.width
+      ),
       body: Container(
         width: screenDimensions.width,
         height: screenDimensions.height,
         color: widget.configData.themeData.bodyBack,
-        padding: EdgeInsets.only(top: 20.0),
+        // margin: EdgeInsets.only(top: 20.0),
         child: ListView(
           children: <Widget>[
-            Center(
-              child: Text(
-                "Theme",
-                style: TextStyle(
-                  fontSize: 20.0,
-                  color: widget.configData.themeData.textColor,
-                ),
-              ),
-            ),
             themePickPage,
             colourPickPage,
             CoursesCorrect(widget.configData.courses, screenDimensions.width, widget.configData.themeData),

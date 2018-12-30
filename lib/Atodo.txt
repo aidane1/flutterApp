@@ -1,0 +1,20 @@
+List of TODO's:
+make following pages:
+-Events
+-Notes
+-Assignments
+-Reminders
+-Block Colours
+-Block Names
+-Day titles
+
+store assignments and notes locally, only retrieve from server when there is an internet connection
+and only retrieve new assignments / notes
+
+purchase domain name schoolr.ca / schoolr.com if possible
+
+make calendar page faster to load. that'll be a hard one.
+
+current priority: Events page
+
+add default "Classr's" to UserStorage to imediately convert to class on call from storage

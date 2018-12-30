@@ -11,7 +11,7 @@ import 'package:experiments/components/universalClasses.dart';
 
 
 
-List<String> dayNames = ["day 1", "day 2", "day 3", "day 4", "day 5"];  
+
 
 
 
@@ -243,7 +243,7 @@ class AnimatedBottom extends AnimatedWidget {
 class BottomPopUp extends StatefulWidget {
   final double screenWidth;
   final double screenHeight;
-  List<Event> events = [];
+  List events = [];
   bool extended = false;
   String dateText;
   UpdateBlock updateBlock;
@@ -255,7 +255,7 @@ class BottomPopUp extends StatefulWidget {
   void setText(String text) {
     dateText = text;
   }
-  void setEvents(List<Event> eventList) {
+  void setEvents(List eventList) {
     events = eventList;
   }
   void extendPage() {
@@ -361,7 +361,7 @@ class _BottomPopUp extends State<BottomPopUp> with SingleTickerProviderStateMixi
     });
   }
 
-  Widget makeEventBlock(Event event) {
+  Widget makeEventBlock(event) {
     return Container(
       width: widget.screenWidth,
       margin: EdgeInsets.only(top: 5.0),
@@ -374,7 +374,7 @@ class _BottomPopUp extends State<BottomPopUp> with SingleTickerProviderStateMixi
             color: Color(0xffcccccc),
             padding: EdgeInsets.all(3.0),
             child: Text(
-              event.time,
+              "9:10 - 10:12",
               style: TextStyle(
                 fontWeight: FontWeight.w500,
               ),
@@ -387,7 +387,7 @@ class _BottomPopUp extends State<BottomPopUp> with SingleTickerProviderStateMixi
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal, 
                 child: Text(
-                  event.longInfo,
+                  event["info"],
                   style: TextStyle(
                     color: Color(0xff2d9b30),
                     fontWeight: FontWeight.w700,
@@ -448,7 +448,7 @@ class _BottomPopUp extends State<BottomPopUp> with SingleTickerProviderStateMixi
       eventsList.add(makeEventBlock(widget.events[i]));
     } 
     if (widget.events.length == 0) {
-      eventsList.add(makeEventBlock(Event(DateTime.now(), "", "No Events!", "No Events!", false, false, false)));
+      eventsList.add(makeEventBlock({"info": "No events!"}));
     }
     if (widget.extended) {
       startAnimation();
@@ -535,7 +535,6 @@ class _BottomPopUp extends State<BottomPopUp> with SingleTickerProviderStateMixi
 }
 
 
-
 //TODO: fix that fucking thing where state is rebuild when you pop back from seperate page, except for some of it.
 class CalendarDisplayed extends StatelessWidget {  
   // final CalendarInfo calendarInfo;
@@ -561,10 +560,10 @@ class CalendarDisplayed extends StatelessWidget {
   int currentYear = 2018;
 
   Widget makeCalendarBox(dateAc, int date, List todayInfo) {
-    // todayInfo = (todayInfo == null) ? ["Day 1", false, true] : todayInfo;
+    List todayEvents = new List();
     return GestureDetector(
       onTap: () {
-        updateBottomPop(dateAc, List<Event>.from(todayInfo[3]), todayInfo[1] ? todayInfo[0] : -1);
+        updateBottomPop(dateAc, todayEvents, todayInfo[1] ? todayInfo[0] : -1);
       },
       child: Container(
         width: screenWidth*0.95/7,
@@ -584,7 +583,7 @@ class CalendarDisplayed extends StatelessWidget {
             Opacity(
               opacity: 0.9,
               child: Text(
-                todayInfo[1] == true ? dayNames[todayInfo[0]] : "",
+                todayInfo[1] == true  ? todayInfo[0] : "",
                 style: TextStyle(
                   fontSize: 12.0,
                   color: configData.textColor,
@@ -612,14 +611,10 @@ class CalendarDisplayed extends StatelessWidget {
     List<Widget> dateBlocks = new List<Widget>();
     for (var i = 0; i < dates.length; i++) {
       DateTime currentDate = DateTime(year, month, dates[i][0]);
-      List todayInfo = calendarInfo.dayMap[[currentDate.year, currentDate.month, currentDate.day].toString()];
-      if (todayInfo == null) {
-        todayInfo = ["Day 1", false, false];
-      }
       if (dates[i][1] == 0) {
         dateBlocks.add(MakeEmptyBox(screenWidth, dates[i][0]));
       } else {
-        dateBlocks.add(makeCalendarBox(DateTime(year, month, dates[i][0]), dates[i][0], todayInfo));
+        dateBlocks.add(makeCalendarBox(DateTime(year, month, dates[i][0]), dates[i][0], calendarInfo.dayMap[currentDate]));
       }
     }
     return Container(
@@ -668,7 +663,7 @@ class CalendarDisplayed extends StatelessWidget {
     );
   }
   
-  void updateBottomPop(DateTime text, List<Event> events, int day) {
+  void updateBottomPop(DateTime text, List events, int day) {
     DateFormat formattedDate = DateFormat("MMMM dd, yyyy");
     popUp.setText(formattedDate.format(text));
     popUp.setEvents(events);
@@ -678,9 +673,6 @@ class CalendarDisplayed extends StatelessWidget {
   }
   
   Widget build(BuildContext context) {
-    // pageController.addListener(() {
-    //   // setState()
-    // });
     popUp = BottomPopUp(screenWidth, screenHeight, "", updaterBlock, readableSchedule);
 
     monthDisplay = MonthDisplay(monthNames[currentDay] + " " + currentYear.toString(), monthUpdater, configData);
@@ -754,13 +746,9 @@ class CalendarDisplayed extends StatelessWidget {
                 MakeCalendarTitle(screenWidth),
                 Container(
                   height: 372.0,
-                  child: PageView.builder(
+                  child: PageView(
                     controller: pageController,
-                    itemCount: calendarBodies.length,
-                    itemBuilder: (context, position) {
-                      return calendarBodies[position];
-                    },
-                    // children: calendarBodies,
+                    children: calendarBodies,
                     onPageChanged: (int) {
                       currentDay = (int+8)%12;
                       if (int+9 > 12) {

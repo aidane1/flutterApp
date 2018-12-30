@@ -62,7 +62,6 @@ class SelectCourses extends StatelessWidget {
           children: <Widget>[
             IconButton(
               icon: Icon(Icons.chevron_left, size: 30.0,),
-              
               color: Colors.white,
               onPressed: () {
                 Navigator.pop(context);

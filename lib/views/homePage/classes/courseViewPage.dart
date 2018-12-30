@@ -29,30 +29,7 @@ Future returnCourseById(String ids) async {
   return {};
 }
 
-//Start of courses classes
-class MakeIconBlock extends StatelessWidget {
-  final dynamic icon;
-  final Color color;
-  MakeIconBlock(this.icon, this.color);
-  Widget build(BuildContext context) {
-    return Container(
-      width: 30.0,
-      height: 30.0,
-      margin: EdgeInsets.all(10.0),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.all(Radius.circular(5.0)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Icon(icon, size: 20.0),
-        ],
-      ),
-    );
-  }
-}
+
 
 class MakeCourseBlock extends StatelessWidget {
 
@@ -64,14 +41,9 @@ class MakeCourseBlock extends StatelessWidget {
   MakeCourseBlock(this.course, this.time, this.screenWidth, this.isLast, this.theme);
 
   Widget build(BuildContext context) {
-    List<dynamic> iconData = classIcons["other"];
-    if (course.category != null && classIcons[course.category.toLowerCase()] != null) {
-      iconData = classIcons[course.category.toLowerCase()];
-    }
     return GestureDetector(
       onTap: () async {
         if (course.id.id != "_") {  
-          print(course.id.id);
           final newCourse = await CourseManipulation.retrieveCourseById(course.id);
           if (newCourse.id.equalsID(course.id)) {
             NoteInfo info = NoteInfo(newCourse, theme);
@@ -91,7 +63,7 @@ class MakeCourseBlock extends StatelessWidget {
         width: screenWidth,
         child: Row(
           children: <Widget>[
-            MakeIconBlock(iconData[0], iconData[1]),
+           SchoolIcons.makeBlock(course.category),
             Container(
               width: screenWidth - 50.0,
               height: 50.0,
@@ -167,34 +139,40 @@ class CourseViewPage extends StatelessWidget {
     for (var i = 0; i < courses.length; i++) {
       courseBlocks.add(MakeCourseBlock(courses[i].course, courses[i].time, screenDimensions.width, i < courses.length-1, configData));
     }
+    
     return Container(
-      height: screenDimensions.height,
+      height: screenDimensions.height - 70.0,
       color: configData.bodyBack,
       padding: EdgeInsets.only(top: 10.0, bottom: 10.0),
-      child: Column(
-        // mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: ListView(
+        scrollDirection: Axis.vertical,
+        physics: ClampingScrollPhysics(),
         children: <Widget>[
-          GestureDetector(
-            onTap:() async {
-              Navigator.of(context).pushNamed("/courses");
-            },
-            child: Text(
-              "Today",
-              style: TextStyle(
-                fontSize: 29.0,
-                color: configData.textColor,
-                fontWeight: FontWeight.w100,
-              )
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(width: 1.0, color: configData.border),bottom: BorderSide(width: 1.0, color: configData.border)),
-            ),
-            child: Column(  
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: courseBlocks
-            ),
+          Column(
+            children: <Widget>[
+              GestureDetector(
+                onTap:() async {
+                  Navigator.of(context).pushNamed("/courses");
+                },
+                child: Text(
+                  "Today",
+                  style: TextStyle(
+                    fontSize: 29.0,
+                    color: configData.textColor,
+                    fontWeight: FontWeight.w100,
+                  )
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(width: 1.0, color: configData.border),bottom: BorderSide(width: 1.0, color: configData.border)),
+                ),
+                child: Column(  
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: courseBlocks
+                ),
+              ),
+            ],
           ),
         ],
       ),

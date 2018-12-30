@@ -25,6 +25,12 @@ dependencies:
   flutter_calendar_carousel: ^1.0.0
   image_picker: ^0.4.10
   material_design_icons_flutter: 2.7.94
+  audio_recorder: ^0.0.1
+  flutter_sound: ^1.0.6
+  shared_preferences: ^0.4.3
+  firebase_core: ^0.2.5
+  firebase_analytics: ^1.0.4
+
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +55,7 @@ flutter:
           weight: 300
   assets:
     - "schoolrLogos/"
+    - "images/"
           
         
   # The following line ensures that the Material Icons font is

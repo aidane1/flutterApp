@@ -7,12 +7,10 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 class HomeInfo {
   final List<DayBlock> dayblocks;
   final List<UpcomingBlock> upcomingBlocks;
-  final List events;
-  final List rolledDays;
-  final List schoolSkipped;
+  final CalendarInfo calendarInfo;
   final ThemeColor themeData;
   final ReadableSchedule readableSchedule;
-  HomeInfo(this.dayblocks, this.upcomingBlocks, this.events, this.rolledDays, this.schoolSkipped, this.themeData, this.readableSchedule);
+  HomeInfo(this.dayblocks, this.upcomingBlocks, this.calendarInfo, this.themeData, this.readableSchedule);
 }
 
 class NoteInfo {
@@ -34,6 +32,36 @@ class ConfigInfo {
   final List<Course> courses;
   final ThemeColor themeData;
   ConfigInfo(this.courses, this.themeData);
+}
+
+class AccountInfo {
+  final ThemeColor themeData;
+  AccountInfo(this.themeData);
+}
+
+class EventInfo {
+  final ThemeColor themeData;
+  EventInfo(this.themeData);
+}
+
+class AllNotesInfo {
+  final List<Course> courses;
+  final ThemeColor themeData;
+  AllNotesInfo(this.courses, this.themeData);
+}
+class RemindersInfo {
+  final ThemeColor themeData;
+  final List<Course> courses;
+  RemindersInfo(this.themeData, this.courses);
+}
+class CalendarInfo {
+  // final List events;
+  // final List rolledDays;
+  // final List schoolSkipped;
+  final Map<String, List> dayMap;
+  final List<Event> events;
+  // final ThemeColor themeData;
+  CalendarInfo(this.dayMap, this.events);
 }
 
 class ReadableScheduleBlock {
@@ -188,6 +216,16 @@ class SchoolIcons {
       "other": [MdiIcons.cloudQuestion, Colors.white],
       "music": [Icons.music_note, Colors.orange[300]],
       "trades": [MdiIcons.wrench, Colors.grey],
+      "theme": [MdiIcons.palette, Colors.red[300]],
+      "courses": [MdiIcons.developerBoard, Colors.blue[300]],
+      "logout": [MdiIcons.logout, Colors.orange[300]],
+      "events": [MdiIcons.calendar, Colors.green[300]],
+      "notes": [MdiIcons.noteMultipleOutline, Colors.blue[300]],
+      "assignments": [MdiIcons.noteText, Colors.red[300]],
+      "reminders": [MdiIcons.bellRing, Colors.green[300]],
+      "colours": [MdiIcons.palette, Colors.purple[300]],
+      "names": [MdiIcons.renameBox, Colors.blue[300]],
+      "titles": [MdiIcons.formatTitle, Colors.green[300]],
     };
     List<dynamic> iconData = classIcons["other"];
     if (category != null && classIcons[category.toLowerCase()] != null) {
@@ -299,12 +337,12 @@ class CourseManipulation {
   }
 }
 
-class ThemeColor {
+class ThemeColor { 
   int mainTheme = 1;
   List<dynamic> secondaryTheme = [0, 0xffff3800];
-  Color bodyBack = Color.fromARGB(255, 0, 0, 0);
-  Color border = Color.fromARGB(255, 100, 100, 100);
-  Color blockBack = Color.fromARGB(255, 20, 20, 20);
+  Color bodyBack = Color.fromARGB(255, 12, 12, 12);
+  Color border = Color.fromARGB(255, 80, 80, 80);
+  Color blockBack = Color.fromARGB(255, 0, 0, 0);
   Color textColor = Colors.white;
   ThemeColor(mainThemeData, secondaryThemeData) {
     if (mainThemeData != null) {
@@ -326,16 +364,22 @@ class ThemeColor {
   }
   void update() {
     if (mainTheme == 1) {
-      this.bodyBack = Color.fromARGB(255, 0, 0, 0);
-      this.border = Color.fromARGB(255, 100, 100, 100);
-      this.blockBack = Color.fromARGB(255, 20, 20, 20);
+      this.bodyBack = Color.fromARGB(255, 12, 12, 12);
+      this.border = Color.fromARGB(255, 80, 80, 80);
+      this.blockBack = Color.fromARGB(255, 0, 0, 0);
       this.textColor = Colors.white;
     } else {
       this.bodyBack = Color.fromARGB(255, 240, 240, 240);
-      this.border = Color.fromARGB(255, 200, 200, 200);
-      this.blockBack = Color.fromARGB(255, 255, 255, 255);
+      // this.bodyBack = CupertinoColors.inactiveGray;
+      this.border = Color.fromARGB(255, 210, 210, 210);
+      // this.blockBack = Color.fromARGB(255, 255, 255, 255);
+      this.blockBack = CupertinoColors.white;
       this.textColor = Colors.black;
     }
+  }
+  bool isDark() {
+    double darkness = 1-(0.299*Color(this.secondaryTheme[1]).red + 0.587*Color(this.secondaryTheme[1]).green + 0.114*Color(this.secondaryTheme[1]).blue)/255;
+    return darkness > 0.5;
   }
 }
 
@@ -478,49 +522,64 @@ class School {
   }
 }
 class Event {
-
-}
-class Note {
-
-}
-class Assignment {
-
-  final String assignment;
-  final String notes;
-  final String dueBy;
-  MongoId id = MongoId("_");
-  bool completed = false;
-  final DateTime dateSubmitted;
-  Assignment(this.assignment, this.notes, this.dueBy, this.id, this.completed, this.dateSubmitted);
-
-  Assignment.fromJson(Map<String, dynamic> json) :
-    assignment = json["assignment"],
-    notes = json["notes"],
-    dueBy = json["dueBy"],
-    id = MongoId(json["id"]),
-    completed = json["completed"],
-    dateSubmitted = DateTime.parse(json["dateSubmitted"]);
-
+  DateTime date;
+  String time;
+  String shortInfo;
+  String longInfo;
+  bool schoolSkipped;
+  bool eventShown;
+  bool dayRolled;
+  bool isReal = false;
+  Event(this.date, this.time, this.shortInfo, this.longInfo, this.schoolSkipped, this.eventShown, this.dayRolled);
+  
+  static Future<List<Event>> retrieveAllFromStorage() async {
+    UserStorage storage = new UserStorage();
+    Map eventData = await storage.readUserData("eventsData.json");
+    List<Event> allEvents = new List<Event>();
+    for (var i = 0; i < eventData["events"].length; i++) {
+      allEvents.add(Event.fromJson(eventData["events"][i]));
+    }
+    return allEvents;
+  }
+  Event.fromJson(Map<String, dynamic> json) {
+    
+    if (DateTime.parse(json["date"]) != null && json["shortInfo"] != null && json["schoolSkipped"] != null && json["eventShown"] != null && json["dayRolled"] != null) {
+      date = DateTime.parse(json["date"]);
+      time = json["time"];
+      shortInfo = json["shortInfo"];
+      longInfo = json["longInfo"] != null ? json["longInfo"] : json["shortInfo"];
+      schoolSkipped = json["schoolSkipped"];
+      eventShown = json["eventShown"];
+      dayRolled = json["dayRolled"];
+      isReal = true;
+    } else {
+      isReal = false;
+    }
+  }
   Map<String, dynamic> toJson() {
     return {
-      "assignment": this.assignment,
-      "notes": this.notes,
-      "dueBy": this.dueBy,
-      "id": this.id.id,
-      "completed": this.completed,
-      "dateSubmitted": this.dateSubmitted.toIso8601String(),
+      "date": this.date.toIso8601String(),
+      "time": this.time,
+      "shortInfo": this.shortInfo,
+      "longInfo": this.longInfo,
+      "schoolSkipped": this.schoolSkipped,
+      "eventShown": this.eventShown,
+      "dayRolled": this.dayRolled,
     };
   }
-  void switchCompleted() {
-    this.completed = !this.completed;
-  }
-
 }
+
+
 
 class User {
   List<MongoId> courses = [];
   List<MongoId> retrievedAssignments = [];
   User();
+  static Future<User> retrieveFromStorage() async {
+    UserStorage storage = new UserStorage();
+    Map userData = await storage.readUserData("userData.json");
+    return User.fromJson({"courses": userData["courses"], "retrievedAssignments": []});
+  }
   void setCoursesFromList(List<String> courseList) {
     this.courses = [];
     for (var i = 0; i < courseList.length; i++) {

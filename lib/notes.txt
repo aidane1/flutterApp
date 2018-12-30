@@ -1,0 +1,60 @@
+Notes:
+
+RetrievedAssignmentIds file format is:
+{
+    _id1: [..list of assignment ids for that course id],
+    _id2: [..list of assignment ids for that course id],
+    _id3: [..list of assignment ids for that course id],
+    ...
+}
+allAssignments file format is:
+{
+    _id1: [{..assignment}, {..assignment},{..assignment}...],
+    _id2: [{..assignment}, {..assignment},{..assignment}...],
+    _id3: [{..assignment}, {..assignment},{..assignment}...],
+    ...
+}
+
+
+a list of ids for notes that have been retrieved from the server, so that we dont get the same notes twice.
+RetrievedNotesIds file format is:
+{
+    _id1: [..list of note ids for that course id],
+    _id2: [..list of note ids for that course id],
+    _id3: [..list of note ids for that course id],
+    ...
+}
+
+a file containing all the notes for each of the users classes in a list. the key is the courseID of the class the note 
+corrisponds to
+allNotes file format is:
+{
+    _id1: [{..note}, {..note},{..note}...],
+    _id2: [{..note}, {..note},{..note}...],
+    _id3: [{..note}, {..note},{..note}...],
+    ...
+}
+
+custom notes are notes the user created locally, rather than notes that have been retrieved from the server. They will only 
+remain in this file for as long as they only exist locally, as soon as they're sent to the server they are removed
+and placed in to the normal notes file.
+userCustomNotes file format is:
+{
+    _id1: [{..note}, {..note}, {..note}],
+    _id2: [{..note}, {..note}, {..note}],
+    _id3: [{..note}, {..note}, {..note}],
+}
+
+buffered notes are notes that the user has written without an internet connection, and as such are only stored locally.
+when the user connects to the internet again, all the buffered notes are sent to the server and removed from buffer
+bufferedNotes file format is: 
+{
+    _id1: [..list of note ids still to be sent to server],
+    _id2: [..list of note ids still to be sent to server],
+    _id3: [..list of note ids still to be sent to server],
+}
+
+CHANGE OF PLAN:
+notes will now be their own file, rather than a key to a larger file. cool.
+add support for notes that are removed server side. every time a request to update notes is sent, send back a list of all notes that have been removed.
+add offline support

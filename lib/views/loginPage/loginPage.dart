@@ -252,41 +252,8 @@ class _FormLogin extends State<FormLogin> {
               },
             ),
             _buildSchoolPicker(context),
-            GestureDetector(
-              onTap: () async {
-                if (_formKey.currentState.validate()) {
-                  _formKey.currentState.save();
-                  Map userInfo  = await (fetchFromServer(_school["id"], _username, _password));
-                  if (userInfo["user"] != null) {
-                    Map userPass = {
-                      "school": _school,
-                      "username": _username,
-                      "password": _password,
-                    };
-
-                    List<Course> courseList = new List<Course>();
-                    for (var i = 0; i < userInfo["courses"].length; i++) {
-                      Course currentCourse = new Course();
-                      currentCourse.populateData(userInfo["courses"][i]);
-                      courseList.add(currentCourse);
-                    }
-
-                    UserStorage storage = new UserStorage();
-                    Map schoolObject = schoolFromObject(userInfo["school"]);
-                    Map coursesObject = {"courses": courseList};
-                    Map eventsObject = eventsFromObject(userInfo["events"]);
-                    await storage.writeUserData(schoolObject, "schoolData.json");
-                    await storage.writeUserData(coursesObject, "coursesData.json");
-                    await storage.writeUserData(eventsObject, "eventsData.json");
-                    await storage.writeUserData({"courses": userInfo["user"]["courses"], "retrievedAssignments": []}, "userData.json");
-                    await storage.writeUserData(userPass, "userPass.json");
-                    Navigator.pushNamedAndRemoveUntil(context,"/configure", (_) => false);
-                  }
-                }
-              },
+            Center(
               child: Container(
-                width: widget.screenWidth*0.95,
-                padding: EdgeInsets.only(top: 10.0, bottom: 10.0),
                 margin: EdgeInsets.only(top: 20.0),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -300,17 +267,133 @@ class _FormLogin extends State<FormLogin> {
                   ),
                   borderRadius: BorderRadius.all(Radius.circular(7.0)),
                 ),
-                child: Center(
-                  child: Text(
-                    "LOGIN",
-                    style: TextStyle(
-                      fontSize: 22.0,
-                      color: Colors.white,
+                child: Material(
+                  color: Color.fromARGB(0, 0, 0, 0),
+                  child: InkWell(
+                    onTap: () async {
+                      if (_formKey.currentState.validate()) {
+                        _formKey.currentState.save();
+                        Map userInfo  = await (fetchFromServer(_school["id"], _username, _password));
+                        if (userInfo["user"] != null) {
+                          Map userPass = {
+                            "school": _school,
+                            "username": _username,
+                            "password": _password,
+                          };
+                          List<Course> courseList = new List<Course>();
+                          for (var i = 0; i < userInfo["courses"].length; i++) {
+                            Course currentCourse = new Course();
+                            currentCourse.populateData(userInfo["courses"][i]);
+                            courseList.add(currentCourse);
+                          }
+                          UserStorage storage = new UserStorage();
+                          Map schoolObject = schoolFromObject(userInfo["school"]);
+                          Map coursesObject = {"courses": courseList};
+                          List<Map> eventList = new List<Map>();
+                          for (var i = 0; i < userInfo["events"].length; i++) {
+                            if (userInfo["events"][i]["info"] == null)  {
+                              userInfo["events"][i]["info"] = "";
+                            }
+                            Event currentEvent = Event.fromJson({"date": userInfo["events"][i]["date"], "time": userInfo["events"][i]["time"], "shortInfo": userInfo["events"][i]["info"], "longInfo": userInfo["events"][i]["longInfo"], "schoolSkipped": userInfo["events"][i]["schoolSkipped"], "dayRolled": userInfo["events"][i]["dayRolled"], "eventShown": userInfo["events"][i]["displayedEvent"]});
+                            if (currentEvent.isReal) {
+                              eventList.add(currentEvent.toJson());
+                            } else {
+                              print(userInfo["events"][i]);
+                            }
+                          }
+                          await storage.writeUserData(schoolObject, "schoolData.json");
+                          await storage.writeUserData(coursesObject, "coursesData.json");
+                          await storage.writeUserData({"events": eventList}, "eventsData.json");
+                          await storage.writeUserData({"courses": userInfo["user"]["courses"], "retrievedAssignments": []}, "userData.json");
+                          await storage.writeUserData(userPass, "userPass.json");
+                          Navigator.pushNamedAndRemoveUntil(context,"/configure", (_) => false);
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: widget.screenWidth*0.95,
+                      padding: EdgeInsets.only(top: 10.0, bottom: 10.0),
+                      child: Center(
+                        child: Text(
+                          "LOGIN",
+                          style: TextStyle(
+                            fontSize: 22.0,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
+            // GestureDetector(
+            //   onTap: () async {
+            //     if (_formKey.currentState.validate()) {
+            //       _formKey.currentState.save();
+            //       Map userInfo  = await (fetchFromServer(_school["id"], _username, _password));
+            //       if (userInfo["user"] != null) {
+            //         Map userPass = {
+            //           "school": _school,
+            //           "username": _username,
+            //           "password": _password,
+            //         };
+
+            //         List<Course> courseList = new List<Course>();
+            //         for (var i = 0; i < userInfo["courses"].length; i++) {
+            //           Course currentCourse = new Course();
+            //           currentCourse.populateData(userInfo["courses"][i]);
+            //           courseList.add(currentCourse);
+            //         }
+
+            //         UserStorage storage = new UserStorage();
+            //         Map schoolObject = schoolFromObject(userInfo["school"]);
+            //         Map coursesObject = {"courses": courseList};
+            //         List<Map> eventList = new List<Map>();
+
+            //         for (var i = 0; i < userInfo["events"].length; i++) {
+            //           Event currentEvent = Event.fromJson({"date": userInfo["events"][i]["date"], "time": userInfo["events"][i]["time"], "shortInfo": userInfo["events"][i]["info"], "longInfo": userInfo["events"][i]["longInfo"], "schoolSkipped": userInfo["events"][i]["schoolSkipped"], "dayRolled": userInfo["events"][i]["dayRolled"], "eventShown": userInfo["events"][i]["displayedEvent"]});
+            //           if (currentEvent.isReal) {
+                        
+            //             eventList.add(currentEvent.toJson());
+            //           }
+            //         }
+            //         await storage.writeUserData(schoolObject, "schoolData.json");
+            //         await storage.writeUserData(coursesObject, "coursesData.json");
+            //         await storage.writeUserData({"events": eventList}, "eventsData.json");
+            //         await storage.writeUserData({"courses": userInfo["user"]["courses"], "retrievedAssignments": []}, "userData.json");
+            //         await storage.writeUserData(userPass, "userPass.json");
+            //         Navigator.pushNamedAndRemoveUntil(context,"/configure", (_) => false);
+            //       }
+            //     }
+            //   },
+            //   child: Container(
+            //     width: widget.screenWidth*0.95,
+            //     padding: EdgeInsets.only(top: 10.0, bottom: 10.0),
+            //     margin: EdgeInsets.only(top: 20.0),
+            //     decoration: BoxDecoration(
+            //       gradient: LinearGradient(
+            //         begin: Alignment.centerLeft,
+            //         end: Alignment.centerRight,
+            //         stops: [0.2, 1.0],
+            //         colors: [
+            //           Color.fromARGB(255, 0, 153, 153),
+            //           Color.fromARGB(255, 0, 130, 209),
+            //         ],
+            //       ),
+            //       borderRadius: BorderRadius.all(Radius.circular(7.0)),
+            //     ),
+            //     child: Center(
+            //       child: Text(
+            //         "LOGIN",
+            //         style: TextStyle(
+            //           fontSize: 22.0,
+            //           color: Colors.white,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),

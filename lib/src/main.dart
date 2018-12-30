@@ -8,10 +8,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../views/homePage/homePage.dart';
+import '../views/eventsPage/eventsPage.dart';
 import '../views/themeSelect/themePage.dart';
 import '../views/loginPage/loginPage.dart';
 import '../views/courseSelect/coursePage.dart';
-import '../views/notes/notesPage.dart';
+import '../views/remindersPage/remindersPage.dart';
+import '../views/allNotesPage/allNotesPage.dart';
+import '../views/allAssignmentsPage/allAssignmentsPage.dart';
+import '../views/accountPage/accountPage.dart';
 import 'package:experiments/components/userStorage.dart';
 import 'package:experiments/components/universalClasses.dart';
 
@@ -55,7 +59,7 @@ eventsFromObject(List events) {
 
 List<List<dynamic>> colourThemes = [["Coquelicot", 0xffff3800, "Sure red is cool, but you're cooler"], ["Smaragdine", 0xff50c875, "Grass is fun"], ["Mikado", 0xffffc40c, "For when normal yellow is too intimidating"], ["Glaucous", 0xff6082b6, "Cloudy days"], ["Wenge", 0xff645452, "Not quite black"], ["Fulvous", 0xffe48400, "Socials binder from grade 5"], ["Amaranth", 0xffe52b50, "Very pretty, very nice"]];
 
-Future<HomeInfo> compileAllHomeInfo(storage) async {
+Future<HomeInfo> compileAllHomeInfo(UserStorage storage, CalendarInfo calendarInfo) async {
 
   List<DayBlock> dayBlocks = await getDayBlocks(storage);
 
@@ -105,9 +109,7 @@ Future<HomeInfo> compileAllHomeInfo(storage) async {
   return HomeInfo(
     dayBlocks,
     currentNext,
-    events["events"] != null ? events["events"] : [],
-    events["rolledDays"] != null ? events["rolledDays"] : [],
-    events["schoolSkipped"] != null ? events["schoolSkipped"] : [],
+    calendarInfo,
     themeColor,
     readableSchedule,
   );
@@ -355,8 +357,8 @@ List<Map<String, List>> makeReadableSchedule(Map<String, dynamic> courseBlockMap
 List<UpcomingBlock> currentNextBlock(List<DayBlock> dayBlocks)  {
   DateTime currentTime = DateTime.now();
   int currentMinute = currentTime.hour*60 + currentTime.minute;
-  UpcomingBlock currentBlock;
-  UpcomingBlock nextBlock;
+  UpcomingBlock currentBlock = UpcomingBlock(ScheduleTime(0, 0, 0, 0), Course(), "Current Block: ", false);
+  UpcomingBlock nextBlock = UpcomingBlock(ScheduleTime(0, 0, 0, 0), Course(), "Next Block: ", false);
   if (currentMinute < dayBlocks[0].time.calculateStartMinute()) {
     currentBlock = UpcomingBlock(dayBlocks[0].time, dayBlocks[0].course, "Current Block: ", false);
     nextBlock = UpcomingBlock(dayBlocks[0].time, dayBlocks[0].course, "Next Block: ", true);
@@ -385,8 +387,121 @@ Future<Map> getAllEvents(UserStorage storage) async {
   return events;
 }
 
+Future<AccountInfo> compileAllAccountInfo(UserStorage storage) async {
+  Map configDataMap = await storage.readUserData("configData.json");
+  ThemeColor themeColor = ThemeColor(configDataMap["mainTheme"], configDataMap["secondaryTheme"]);
+  themeColor.update();
+  return AccountInfo(themeColor);
+}
 
+Future<AllNotesInfo> compileAllAllNotesInfo(UserStorage storage) async {
+  User user = await User.retrieveFromStorage();
+  Map configDataMap = await storage.readUserData("configData.json");
+  ThemeColor themeColor = ThemeColor(configDataMap["mainTheme"], configDataMap["secondaryTheme"]);
+  themeColor.update();
+  return AllNotesInfo(await CourseManipulation.retrieveCoursesById(user.courses), themeColor);
+}
+
+Future<AllNotesInfo> compileAllAllAssignmentsInfo(UserStorage storage) async {
+  User user = await User.retrieveFromStorage();
+  Map configDataMap = await storage.readUserData("configData.json");
+  ThemeColor themeColor = ThemeColor(configDataMap["mainTheme"], configDataMap["secondaryTheme"]);
+  themeColor.update();
+  return AllNotesInfo(await CourseManipulation.retrieveCoursesById(user.courses), themeColor);
+}
+
+Future<CalendarInfo> compileAllCalendarInfo(UserStorage storage) async {
+  // Map events = await getAllEvents(storage);
+  // Map configDataMap = await storage.readUserData("configData.json");
+  // ThemeColor themeColor = ThemeColor(configDataMap["mainTheme"], configDataMap["secondaryTheme"]);
+  // themeColor.update();
+  // return CalendarInfo(
+  //   events["events"] != null ? events["events"] : [],
+  //   events["rolledDays"] != null ? events["rolledDays"] : [],
+  //   events["schoolSkipped"] != null ? events["schoolSkipped"] : [],
+  //   themeColor,
+  // );
+}
+Future<RemindersInfo> compileAllReminderInfo(UserStorage storage) async {
+  Map configDataMap = await storage.readUserData("configData.json");
+  ThemeColor themeColor = ThemeColor(configDataMap["mainTheme"], configDataMap["secondaryTheme"]);
+  themeColor.update();
+  User user = await User.retrieveFromStorage();
+  return RemindersInfo(themeColor, await CourseManipulation.retrieveCoursesById(user.courses));
+}
+
+Future<EventInfo> compileAllEventInfo(UserStorage storage) async {
+  Map configDataMap = await storage.readUserData("configData.json");
+  ThemeColor themeColor = ThemeColor(configDataMap["mainTheme"], configDataMap["secondaryTheme"]);
+  themeColor.update();
+  return EventInfo(themeColor);
+}
 void  main() async {
+  //sets first month to september
+  //TODO: make this a configurable feature, client side
+  List<Event> events = await Event.retrieveAllFromStorage();
+  DateTime startDate = DateTime(2018, 9, 3);
+  DateTime endDate = DateTime(2019, 6, 30);
+  Duration yearLength = endDate.difference(startDate);
+  Map<String, List> dates = new Map<String, List>();
+  events.sort((a,b) {
+    return a.date.millisecondsSinceEpoch.compareTo(b.date.millisecondsSinceEpoch);
+  });
+  List<Event> daysRolled = events.where((i) => i.dayRolled && i.date.add(Duration(days: 1)).millisecondsSinceEpoch >= startDate.millisecondsSinceEpoch).toList();
+  List<Event> schoolSkipped = events.where((i) => i.schoolSkipped&& i.date.millisecondsSinceEpoch >= startDate.millisecondsSinceEpoch).toList();
+  int currentDay = 0;
+  int currentIndex = 0;
+  int currentSkippedIndex = 0;
+  int currentEventIndex = 0;
+  List<String> dayNames = ["day 1", "day 2", "day 3", "day 4", "day 5"];  
+  // print(yearLength.inDays);
+  for (var i = 0; i < yearLength.inDays; i++) {
+    //what the current 'day' is, if the 'day' value is displayed, and if there is an event on that day
+    List currentDayList = ["day 1", true, false, []];
+    DateTime currentDate = startDate.add(Duration(days: i));
+    if (currentDate.weekday == 6 || currentDate.weekday == 7) {
+      currentDayList[1] = false;
+      currentDayList[2] = false;
+    }
+    while(currentEventIndex < events.length && DateTime(events[currentEventIndex].date.year, events[currentEventIndex].date.month, events[currentEventIndex].date.day).millisecondsSinceEpoch <= currentDate.millisecondsSinceEpoch) {
+      if (events[currentEventIndex].date.year == currentDate.year && events[currentEventIndex].date.month == currentDate.month && events[currentEventIndex].date.day == currentDate.day && events[currentEventIndex].eventShown) {
+        currentDayList[3].add(events[currentEventIndex]);
+        currentDayList[2] = true;
+      }
+      currentEventIndex++;
+    }
+    while(currentSkippedIndex < schoolSkipped.length && DateTime(schoolSkipped[currentSkippedIndex].date.year, schoolSkipped[currentSkippedIndex].date.month, schoolSkipped[currentSkippedIndex].date.day).millisecondsSinceEpoch <= currentDate.millisecondsSinceEpoch) {
+      if (schoolSkipped[currentSkippedIndex].date.year == currentDate.year && schoolSkipped[currentSkippedIndex].date.month == currentDate.month && schoolSkipped[currentSkippedIndex].date.day == currentDate.day) {
+        currentDayList[1] = false;
+      }
+      currentSkippedIndex++;
+    }
+    while(currentIndex < daysRolled.length && daysRolled[currentIndex].date.millisecondsSinceEpoch < currentDate.millisecondsSinceEpoch) {
+      if (daysRolled[currentIndex].date.year == currentDate.year && daysRolled[currentIndex].date.month == currentDate.month && daysRolled[currentIndex].date.day == currentDate.day) {
+        // print(daysRolled[currentIndex].date);  
+        currentDayList[1] = false;
+      }
+      //rolls the day
+      currentDay -= 1;
+      //makes sure it isnt negative
+      currentDay += 5;
+      //takes it mod 5 to be a day of the week
+      currentDay %= 5;
+      currentIndex++;
+    }
+    currentDayList[0] = currentDay;
+    dates[[currentDate.year, currentDate.month, currentDate.day].toString()] = currentDayList;    
+    if (currentDate.weekday != 6 && currentDate.weekday != 7) {
+      currentDay += 1;
+      currentDay %= 5;
+    } else {
+      currentDayList[1] = false;
+    }
+  }
+
+  //TODO: Pre-load all the days for blocks, and make a function to get what day a certain date is
+  
+  //Map format wi
   UserStorage storage = new UserStorage();
   Map courseData = await storage.readUserData("userPass.json");
   String initRoute = "/";
@@ -396,14 +511,15 @@ void  main() async {
     initRoute = "/login";
   }
   
-  runApp(MyApp(storage, initRoute));
+  runApp(MyApp(storage, initRoute, CalendarInfo(dates, events)));
 }
 
 
 class MyApp extends StatelessWidget {
   final UserStorage storage;
   final String initRoute;
-  MyApp(this.storage, this.initRoute);
+  final CalendarInfo calendarInfo;
+  MyApp(this.storage, this.initRoute, this.calendarInfo);
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -412,17 +528,92 @@ class MyApp extends StatelessWidget {
       initialRoute: initRoute,
       routes: <String, WidgetBuilder> {
         '/': (BuildContext context) {
+          // return calendar;
+          return HomePage(compileAllHomeInfo(storage, calendarInfo));
+          // return FutureBuilder(
+          //   future: compileAllHomeInfo(storage),
+          //   builder: (context, snapshot) {
+          //     if (snapshot.hasData) {
+          //       return HomePage(snapshot.data);
+          //     } else if (snapshot.hasError) {
+          //       return CircularProgressIndicator();
+          //     } else {
+          //       return CircularProgressIndicator();
+          //     }
+          //   },
+          // );
+        },
+        // "/calendar": (BuildContext context) {
+        //   return FutureBuilder(
+        //     future: compileAllCalendarInfo(storage),
+        //     builder: (context, snapshot) {
+        //       if (snapshot.hasData) {
+        //         return ReminderPage(snapshot.data);
+        //       } else if (snapshot.hasError) {
+        //         return CircularProgressIndicator();
+        //       } else {
+        //         return CircularProgressIndicator();
+        //       }
+        //     },
+        //   );
+        // },
+        '/reminders': (BuildContext context) {
           return FutureBuilder(
-            future: compileAllHomeInfo(storage),
+            future: compileAllReminderInfo(storage),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
-                return HomePage(snapshot.data);
+                return ReminderPage(snapshot.data);
               } else if (snapshot.hasError) {
                 return CircularProgressIndicator();
               } else {
                 return CircularProgressIndicator();
               }
             },
+          );
+        },
+        "/allNotes": (BuildContext context) {
+          return FutureBuilder(
+            future: compileAllAllNotesInfo(storage),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return AllNotesPage(snapshot.data);
+              } else if (snapshot.hasError) {
+                print(snapshot.error);
+                return CircularProgressIndicator();
+              } else {
+                return CircularProgressIndicator();
+              }
+            }
+          );
+        },
+        "/allAssignments": (BuildContext context) {
+          return FutureBuilder(
+            future: compileAllAllAssignmentsInfo(storage),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return AllAssignmentsPage(snapshot.data);
+              } else if (snapshot.hasError) {
+                print(snapshot.error);
+                return CircularProgressIndicator();
+              } else {
+                return CircularProgressIndicator();
+              }
+            }
+          );
+        },
+        "/events": (BuildContext context) {
+          return FutureBuilder(
+            future: compileAllEventInfo(storage),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return EventsPage(snapshot.data);
+              } else if (snapshot.hasError) {
+                print(snapshot.error);
+                return CircularProgressIndicator();
+              } else {
+                return CircularProgressIndicator();
+              }
+            }
           );
         },
         "/login": (BuildContext context) {
@@ -469,8 +660,20 @@ class MyApp extends StatelessWidget {
           );
         },
         "/account": (BuildContext context) {
-          return AccountPage();
-        }
+          return FutureBuilder(
+            future: compileAllAccountInfo(storage),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return AccountPage(snapshot.data);
+              } else if (snapshot.hasError) {
+                print(snapshot.error);
+                return CircularProgressIndicator();
+              } else {
+                return CircularProgressIndicator();
+              }
+            }
+          );
+        },
       }
     );
   }
@@ -493,46 +696,46 @@ Map classIcons = {
 
 
 
-class AccountPage extends StatelessWidget {
+// class AccountPage extends StatelessWidget {
   
-  Widget build(BuildContext context) {
-    final screenDimensions = MediaQuery.of(context).size;
-    return Imager();
-  }
-}
+//   Widget build(BuildContext context) {
+//     final screenDimensions = MediaQuery.of(context).size;
+//     return Imager();
+//   }
+// }
 
-class Imager extends StatefulWidget {
-  _Imager createState() => _Imager();
-}
+// class Imager extends StatefulWidget {
+//   _Imager createState() => _Imager();
+// }
 
-class _Imager extends State<Imager> {
-  File _image;
+// class _Imager extends State<Imager> {
+//   File _image;
 
-  Future getImage() async {
-    var image = await ImagePicker.pickImage(source: ImageSource.camera);
-    setState(() {
-      _image = image;
-    });
-  }
-  @override
-  Widget build(BuildContext context) {
-    return new Scaffold(
-      appBar: new AppBar(
-        title: new Text('Image Picker Example'),
-      ),
-      body: new Center(
-        child: _image == null
-            ? new Text('No image selected.')
-            : new Image.file(_image),
-      ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: getImage,
-        tooltip: 'Pick Image',
-        child: new Icon(Icons.add_a_photo),
-      ),
-    );
-  }
-}
+//   Future getImage() async {
+//     var image = await ImagePicker.pickImage(source: ImageSource.camera);
+//     setState(() {
+//       _image = image;
+//     });
+//   }
+//   @override
+//   Widget build(BuildContext context) {
+//     return new Scaffold(
+//       appBar: new AppBar(
+//         title: new Text('Image Picker Example'),
+//       ),
+//       body: new Center(
+//         child: _image == null
+//             ? new Text('No image selected.')
+//             : new Image.file(_image),
+//       ),
+//       floatingActionButton: new FloatingActionButton(
+//         onPressed: getImage,
+//         tooltip: 'Pick Image',
+//         child: new Icon(Icons.add_a_photo),
+//       ),
+//     );
+//   }
+// }
 
 
 
